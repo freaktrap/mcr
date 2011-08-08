@@ -1,0 +1,11 @@
+name: mcRisk
+main: ft.mcRisk.mcRisk
+version: 0.1
+
+commands:
+    pos:
+        description: Reveals player location or teleports to selected lcoation.
+        usage: /pos [x, y, z]
+    debug:
+        description: Not sure lol. 
+        usage: /debug
