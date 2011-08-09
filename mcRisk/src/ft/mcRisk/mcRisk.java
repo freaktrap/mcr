@@ -11,6 +11,7 @@ package ft.mcRisk;
 		//string, not3paD	not	
 //to capture a control chest, players must have the resources to take it over
 
+import java.util.Date;
 import java.util.HashMap;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Priority;
@@ -18,6 +19,7 @@ import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.Location;
 
 /**
 * Sample plugin for Bukkit
@@ -28,6 +30,9 @@ public class mcRisk extends JavaPlugin {
     private final mcrPlayerListener playerListener = new mcrPlayerListener(this);
     private final mcrBlockListener blockListener = new mcrBlockListener(this);
     private final HashMap<Player, Boolean> debugees = new HashMap<Player, Boolean>();
+    private final HashMap<Player, Date> riskCooldown = new HashMap<Player, Date>();
+    private final HashMap<Player, String> riskOwners = new HashMap<Player, String>();
+    
 
     // NOTE: There should be no need to define a constructor any more for more info on moving from
     // the old constructor see:
@@ -61,7 +66,37 @@ public class mcRisk extends JavaPlugin {
         PluginDescriptionFile pdfFile = this.getDescription();
         System.out.println( pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!" );
     }
+    
+    public void PlayerChunkRisk(Player actor){
+    	//verify player is in a capturable zone
+    	
+    	//verify player isn't on cooldown
+		Date now = new Date();
+    	if(!riskCooldown.containsKey(actor)){
+    		riskCooldown.put(actor, now);
+    	}
+    	Date riskReadyAt = riskCooldown.get(actor);
+    	if(riskReadyAt.before(now)){
+    		//player needs to wait
+    		System.out.println("Player "+actor.getDisplayName()+" must wait for risk cooldown.");
+    		return;
+    	}
+    	
 
+		System.out.println("Player "+actor.getDisplayName()+" performed risk.");
+    	
+    	return;
+    }
+    
+    public String LocToRegion(Location loc){
+    	String reg = "";
+    	
+    	int regX = (int)loc.getX()/32;
+    	int regY = (int)loc.getY()/32;
+    	
+    	reg 
+    }
+    
     public boolean isDebugging(final Player player) {
         if (debugees.containsKey(player)) {
             return debugees.get(player);
