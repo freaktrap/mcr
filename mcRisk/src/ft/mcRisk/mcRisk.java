@@ -31,7 +31,8 @@ public class mcRisk extends JavaPlugin {
     private final mcrBlockListener blockListener = new mcrBlockListener(this);
     private final HashMap<Player, Boolean> debugees = new HashMap<Player, Boolean>();
     private final HashMap<Player, Date> riskCooldown = new HashMap<Player, Date>();
-    private final HashMap<Player, String> riskOwners = new HashMap<Player, String>();
+    private final HashMap<String, Player> regOwners = new HashMap<String, Player>();
+    private final HashMap<String, Integer> regLevels = new HashMap<String, Integer>();
     
 
     // NOTE: There should be no need to define a constructor any more for more info on moving from
@@ -68,8 +69,6 @@ public class mcRisk extends JavaPlugin {
     }
     
     public void PlayerChunkRisk(Player actor){
-    	//verify player is in a capturable zone
-    	
     	//verify player isn't on cooldown
 		Date now = new Date();
     	if(!riskCooldown.containsKey(actor)){
@@ -83,18 +82,43 @@ public class mcRisk extends JavaPlugin {
     	}
     	
 
+    	String reg = LocToRegion(actor.getLocation());
+    	if(!regOwners.containsKey(reg)){
+    		regOwners.put(reg, "_free");
+    	}
+    	
+		//verify server doesn't own this zone
+		if(regOwners.get(reg).getDisplayName() == "_public"){
+			System.out.println("Player "+actor.getDisplayName()+" attempted to risk a public zone.");
+			return;
+		}
+		
+		//if the zone is unclaimed, take it
+		if(regOwners.get(reg).getDisplayName() == "_free"){
+			System.out.println("Player "+actor.getDisplayName()+" has claimed the zone "+reg+".");
+			regOwners.remove(reg);
+			regOwners.put(reg, actor);
+			return;
+		}
+		
+		//if player already owns the zone, upgrade it and set the timeout
+		if(regOwners.get(reg).getDisplayName() == actor.getDisplayName()){
+			System.out.println("Player "+actor.getDisplayName()+" attempted to risk an already owned zone.");
+			return;
+		}
+		
+		
+    	
 		System.out.println("Player "+actor.getDisplayName()+" performed risk.");
     	
     	return;
     }
     
     public String LocToRegion(Location loc){
-    	String reg = "";
-    	
     	int regX = (int)loc.getX()/32;
     	int regY = (int)loc.getY()/32;
     	
-    	reg 
+    	return Integer.toString(regX)+","+Integer.toString(regY);
     }
     
     public boolean isDebugging(final Player player) {
