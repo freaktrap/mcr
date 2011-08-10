@@ -2,10 +2,9 @@
 package ft.mcRisk;
 
 import org.bukkit.Location;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerListener;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.Material;
+import org.bukkit.event.player.*;
+import org.bukkit.inventory.*;
 
 /**
 * Handle events for all Player related events
@@ -24,8 +23,15 @@ public class mcrPlayerListener extends PlayerListener {
     }
 
     @Override
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        System.out.println(event.getPlayer().getName() + " left the server! :'(");
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        System.out.println(event.getPlayer().getName() + " - interaction");
+        ItemStack heldItem = event.getPlayer().getItemInHand();
+        if((heldItem.getType() == Material.GOLD_SWORD) ||
+        		(heldItem.getType() == Material.STONE_SWORD)||
+        		(heldItem.getType() == Material.DIAMOND_SWORD)||
+        		(heldItem.getType() == Material.IRON_SWORD)){
+        	plugin.PlayerRegionConq(event.getPlayer());
+        }
     }
 
     @Override

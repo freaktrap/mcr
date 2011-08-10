@@ -22,9 +22,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.Location;
 
 /**
-* Sample plugin for Bukkit
+* Conquest/Risk plugin for bukkit, allows players to make claims on regions of land
 *
-* @author Dinnerbone
+* @author FreakTrap
 */
 public class mcRisk extends JavaPlugin {
     private final mcrPlayerListener playerListener = new mcrPlayerListener(this);
@@ -54,6 +54,8 @@ public class mcRisk extends JavaPlugin {
         // Register our events
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Priority.Normal, this);
+        
+        pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
         pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
         pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
         pm.registerEvent(Event.Type.BLOCK_PHYSICS, blockListener, Priority.Normal, this);
@@ -68,7 +70,7 @@ public class mcRisk extends JavaPlugin {
         System.out.println( pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!" );
     }
     
-    public void PlayerChunkRisk(Player actor){
+    public void PlayerRegionConq(Player actor){
     	//verify player isn't on cooldown
 		Date now = new Date();
     	if(!riskCooldown.containsKey(actor)){
@@ -81,44 +83,47 @@ public class mcRisk extends JavaPlugin {
     		return;
     	}
     	
-
     	String reg = LocToRegion(actor.getLocation());
-    	if(!regOwners.containsKey(reg)){
-    		regOwners.put(reg, "_free");
+    	Integer regLevel = regLevels.get(reg);
+    	Player regOwner = regOwners.get(reg);
+    	
+    	//players may not interact with public lands
+    	if(regLevel < 0){
+    		System.out.println("Player "+actor.getDisplayName()+" attempted to capture public region "+reg+".");
+    		return;
     	}
     	
-		//verify server doesn't own this zone
-		if(regOwners.get(reg).getDisplayName() == "_public"){
-			System.out.println("Player "+actor.getDisplayName()+" attempted to risk a public zone.");
-			return;
-		}
-		
-		//if the zone is unclaimed, take it
-		if(regOwners.get(reg).getDisplayName() == "_free"){
-			System.out.println("Player "+actor.getDisplayName()+" has claimed the zone "+reg+".");
-			regOwners.remove(reg);
-			regOwners.put(reg, actor);
-			return;
-		}
-		
-		//if player already owns the zone, upgrade it and set the timeout
-		if(regOwners.get(reg).getDisplayName() == actor.getDisplayName()){
-			System.out.println("Player "+actor.getDisplayName()+" attempted to risk an already owned zone.");
-			return;
-		}
-		
-		
-    	
-		System.out.println("Player "+actor.getDisplayName()+" performed risk.");
-    	
-    	return;
+    	//players may take over unclaimed regions
+    	if(regOwner == null || regLevel == 0){
+    		regLevels.remove(reg);
+    		regLevels.put(reg, 1);
+    		regOwners.remove(reg);
+    		regOwners.put(reg, actor);
+    		System.out.println("Player "+actor.getDisplayName()+" has claimed the free region of "+reg+".");
+    		return;
+    	}else{
+    		//implies the region is owned AND has a positive region level
+    		System.out.println("Player "+actor.getDisplayName()+" has assaulted the region of "+reg+" owned by "+regOwner.getDisplayName()+".");
+    		regLevel -= 1;
+    		if(regLevel == 0){
+    			System.out.println("Region "+reg+" is now free.");
+    			regOwners.remove(reg);
+    			return;
+    		}else{
+    			System.out.println("Region "+reg+" has been downgraded to level "+regLevel+".");
+    			regLevels.put(reg, regLevel);
+    			return;
+    		}
+    	}
+    	//System.out.println("Player "+actor.getDisplayName()+" performed an unhandled conquest.");
     }
     
     public String LocToRegion(Location loc){
     	int regX = (int)loc.getX()/32;
     	int regY = (int)loc.getY()/32;
+    	int regZ = (int)loc.getZ()/32;
     	
-    	return Integer.toString(regX)+","+Integer.toString(regY);
+    	return "("+Integer.toString(regX)+","+Integer.toString(regY)+","+Integer.toString(regZ)+")";
     }
     
     public boolean isDebugging(final Player player) {
