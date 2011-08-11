@@ -24,13 +24,23 @@ public class mcrPlayerListener extends PlayerListener {
 
     @Override
     public void onPlayerInteract(PlayerInteractEvent event) {
-        System.out.println(event.getPlayer().getName() + " - interaction");
+    	
         ItemStack heldItem = event.getPlayer().getItemInHand();
+        
         if((heldItem.getType() == Material.GOLD_SWORD) ||
         		(heldItem.getType() == Material.STONE_SWORD)||
         		(heldItem.getType() == Material.DIAMOND_SWORD)||
-        		(heldItem.getType() == Material.IRON_SWORD)){
+        		(heldItem.getType() == Material.IRON_SWORD)||
+        		(heldItem.getType() == Material.WOOD_SWORD)){
         	plugin.PlayerRegionConq(event.getPlayer());
+        }
+        
+        if((heldItem.getType() == Material.WOOD_PICKAXE) ||
+        		(heldItem.getType() == Material.STONE_PICKAXE)||
+        		(heldItem.getType() == Material.IRON_PICKAXE)||
+        		(heldItem.getType() == Material.GOLD_PICKAXE)||
+        		(heldItem.getType() == Material.DIAMOND_PICKAXE)){
+        	plugin.PlayerRegionInfo(event.getPlayer());
         }
     }
 
