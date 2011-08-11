@@ -24,9 +24,16 @@ public class mcrPlayerListener extends PlayerListener {
 
     @Override
     public void onPlayerInteract(PlayerInteractEvent event) {
+    	boolean playerAuthInteract = plugin.PlayerRegionAuth(event);
+    	
+    	event.setCancelled(playerAuthInteract);
+    }
+    @Override
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
     	
         ItemStack heldItem = event.getPlayer().getItemInHand();
-        
+
+        //swords create conquest events
         if((heldItem.getType() == Material.GOLD_SWORD) ||
         		(heldItem.getType() == Material.STONE_SWORD)||
         		(heldItem.getType() == Material.DIAMOND_SWORD)||
@@ -34,7 +41,8 @@ public class mcrPlayerListener extends PlayerListener {
         		(heldItem.getType() == Material.WOOD_SWORD)){
         	plugin.PlayerRegionConq(event.getPlayer());
         }
-        
+
+        //a pickaxe gives information on the region
         if((heldItem.getType() == Material.WOOD_PICKAXE) ||
         		(heldItem.getType() == Material.STONE_PICKAXE)||
         		(heldItem.getType() == Material.IRON_PICKAXE)||
@@ -42,6 +50,11 @@ public class mcrPlayerListener extends PlayerListener {
         		(heldItem.getType() == Material.DIAMOND_PICKAXE)){
         	plugin.PlayerRegionInfo(event.getPlayer());
         }
+        
+        //shovels let players harvest from regions
+        
+        //axes let players ...
+        
     }
 
     @Override
