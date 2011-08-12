@@ -49,8 +49,18 @@ public class mcrPlayerListener extends PlayerListener {
             	plugin.PlayerRegionInfo(event.getPlayer());
             	return;
             }
-            //shovels let players harvest from regions
+            //shovels let players harvest from all owned regions
+            if((heldItem.getType() == Material.WOOD_PICKAXE) ||
+            		(heldItem.getType() == Material.STONE_PICKAXE)||
+            		(heldItem.getType() == Material.IRON_PICKAXE)||
+            		(heldItem.getType() == Material.GOLD_PICKAXE)||
+            		(heldItem.getType() == Material.DIAMOND_PICKAXE)){
+            	
+            	plugin.PlayerRegionInfo(event.getPlayer());
+            	return;
+            }
             //axes let players ...
+            
     	}
     	
     	//players wielding a sword will always be able to interact with any targets
@@ -62,7 +72,7 @@ public class mcrPlayerListener extends PlayerListener {
         	return;
         }
     	
-    	//for all other interactions...
+    	//for all other interactions, let the main plugin class authorize.
     	boolean playerAuthInteract = plugin.PlayerRegionAuth(event);
     	
     	event.setCancelled(!playerAuthInteract);

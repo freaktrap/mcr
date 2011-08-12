@@ -33,7 +33,6 @@ public class mcrBlockListener extends BlockListener {
 
     @Override
     public void onBlockCanBuild(BlockCanBuildEvent event) {
-    	
     	/*
         Material mat = event.getMaterial();
 

@@ -27,6 +27,7 @@ import org.bukkit.entity.*;
 import org.bukkit.event.player.PlayerInteractEvent;
 //import org.bukkit.entity.Fireball;
 import org.bukkit.util.Vector;
+import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 
 /**
@@ -42,6 +43,7 @@ public class mcRisk extends JavaPlugin {
 	private final HashMap<String, Player> regOwners = new HashMap<String, Player>();
 	private final HashMap<String, Integer> regLevels = new HashMap<String, Integer>();
 	
+	private final mcrLootTable lootTbl = new mcrLootTable();
 	private long ConqDelayTime = 10*1000; //10 seconds
 
 	public void onDisable() {
@@ -58,7 +60,7 @@ public class mcRisk extends JavaPlugin {
 		pm.registerEvent(Event.Type.PLAYER_INTERACT_ENTITY, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Highest, this);
+		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Low, this);
 		pm.registerEvent(Event.Type.BLOCK_PHYSICS, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
@@ -69,7 +71,52 @@ public class mcRisk extends JavaPlugin {
 		// EXAMPLE: Custom code, here we just output some info so we can check all is well
 		PluginDescriptionFile pdfFile = this.getDescription();
 		System.out.println(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!");
+		
+		Material lootTest = null;
+		lootTest = lootTbl.LootRoll();System.out.println("Test Roll: "+lootTest.name());
+		lootTest = lootTbl.LootRoll();System.out.println("Test Roll: "+lootTest.name());
+		lootTest = lootTbl.LootRoll();System.out.println("Test Roll: "+lootTest.name());
+		lootTest = lootTbl.LootRoll();System.out.println("Test Roll: "+lootTest.name());
+		lootTest = lootTbl.LootRoll();System.out.println("Test Roll: "+lootTest.name());
+		
 	}
+    
+    public void PlayerLootTick(Player actor){
+		//verify player isn't on cooldown
+		Date now = new Date();
+		if(!riskCooldown.containsKey(actor)){
+			riskCooldown.put(actor, new Date(now.getTime() - Timer.ONE_SECOND));
+		}
+		Date riskReadyAt = riskCooldown.get(actor);
+		if(!now.after(riskReadyAt)){
+			//player needs to wait
+			Integer cdTime = 1 + (int)(riskReadyAt.getTime() - now.getTime())/1000;
+			actor.sendMessage("Please wait "+cdTime.toString()+" seconds before attempting to loot.");
+			return;
+		}
+    	
+		//spawn one item per owned region
+		World plrWorld = actor.getWorld();
+		Location plrLocation = actor.getEyeLocation();
+		ItemStack itmSpawn = null;
+		Material itmLoot = null;
+		
+		Integer lootN = 0;
+		for(String regStr : regOwners.keySet()){
+			if(regOwners.get(regStr) == actor){
+				itmLoot = lootTbl.LootRoll();
+				itmSpawn = new ItemStack(itmLoot, 1);
+				
+				plrWorld.dropItem(plrLocation, itmSpawn);
+				
+				lootN++;
+			}
+		}
+		if(itmLoot != null){
+			actor.sendMessage("You looted a total of "+ChatColor.GREEN+lootN+ChatColor.WHITE+" items!");
+			riskCooldown.put(actor, new Date(now.getTime() + ConqDelayTime));
+		}
+    }
     
     public void AnnounceRegionEntry(mcrRegion regSrc, mcrRegion regDes, Player actor){
     	//announce when entering terriroty with a different owner
