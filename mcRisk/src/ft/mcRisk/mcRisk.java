@@ -55,10 +55,10 @@ public class mcRisk extends JavaPlugin {
 		PluginManager pm = getServer().getPluginManager();
 		
 		pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_INTERACT_ENTITY, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Highest, this);
 		pm.registerEvent(Event.Type.BLOCK_PHYSICS, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
@@ -70,12 +70,49 @@ public class mcRisk extends JavaPlugin {
 		PluginDescriptionFile pdfFile = this.getDescription();
 		System.out.println(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!");
 	}
+    
+    public void AnnounceRegionEntry(mcrRegion regSrc, mcrRegion regDes, Player actor){
+    	//announce when entering terriroty with a different owner
+    	String regSrcOwner = "";
+    	String regDesOwner = "";
+    	Integer regSrcLevel = regLevels.get(regSrc.toString());
+    	Integer regDesLevel = regLevels.get(regDes.toString());
+
+    	if(regSrcLevel == null) regSrcLevel = 0;
+    	if(regDesLevel == null) regDesLevel = 0;
+    	
+    	if(regOwners.containsKey(regSrc.toString()))
+    		regSrcOwner = regOwners.get(regSrc.toString()).getName();
+    	else if(regSrcLevel < 0)
+    		regSrcOwner = "public";
+    	else
+    		regSrcOwner = "unclaimed";
+    		
+    	if(regOwners.containsKey(regDes.toString())){
+    		regDesOwner = regOwners.get(regDes.toString()).getName();
+    	}else if(regDesLevel < 0){
+    		regDesOwner = "public";
+    	}else{
+    		regDesOwner = "unclaimed";
+    	}
+    	
+    	if(regDesOwner != regSrcOwner){
+    		if(regDesOwner == "public")
+    			actor.sendMessage("You have entered protected territory.");
+    		else if(regDesOwner == "unclaimed")
+    			actor.sendMessage("You have entered unclaimed territory.");
+    		else
+    			actor.sendMessage("You have entered the territory of "+regDesOwner+".");
+    		
+    	}
+    }
 	
     public boolean PlayerRegionAuth(PlayerInteractEvent event){
     	//Disallow player interactions for damaging blocks
     		//in regions level 10+ owned by other players
     		//or in 'public' regions
     	
+    	if(event.getClickedBlock() == null){ return true; }
 		mcrRegion region = new mcrRegion(event.getClickedBlock().getLocation());
 		Integer regLevel = regLevels.get(region.toString());
 
@@ -88,7 +125,7 @@ public class mcRisk extends JavaPlugin {
 
 		//public regions
 		if(regLevel < 0){
-			event.getPlayer().sendMessage("You may not interact with public regions");
+			event.getPlayer().sendMessage("You may not interact with public regions.");
 			return false;
 		}
 		
@@ -129,23 +166,24 @@ public class mcRisk extends JavaPlugin {
 			
 		}
 		
-		actor.sendMessage("Region:"+region.toString()+"; Owner:"+regOwnerName+"; Level:"+regLevel);
+		actor.sendMessage(""+region.toString()+" Owner:"+regOwnerName+", Level:"+regLevel);
 	}
 	
 	private void PlayerConqEffect(Player actor){
 		//Snowball nSnowball = null;
 		mcrRegion region = new mcrRegion(actor.getLocation());
 		
-		System.out.println("Snowballs for player in reg"+region.toString());
-		System.out.println("Bounds:");
-		System.out.println("	"+region.BaseVector().toString());
-		System.out.println("	"+(region.BaseVector().add(new Vector(32.0,0.0,32.0))).toString());
-		
 		Location regionBase = new Location(actor.getWorld(),
 				region.BaseVector().getX(),
 				//region.BaseVector().getY(),
 				actor.getEyeLocation().getY(),
 				region.BaseVector().getZ());
+		Location tempLoc = null;
+		
+		//System.out.println("Snowballs for player in reg"+region.toString());
+		//System.out.println("Bounds:");
+		//System.out.println("	"+regionBase.toString());
+		//System.out.println("	"+regionBase.add(32.0,0.0,32.0).toString());
 		
 		ArrayList<Snowball> regEffect = new ArrayList<Snowball>();
 		//Location effSpLoc = null;
@@ -160,13 +198,13 @@ public class mcRisk extends JavaPlugin {
 						(float)((int)actor.getLocation().getZ()/32)*32.0 + j*4.0);
 				*/
 				//System.out.println(""+effSpLoc.toString());
+				tempLoc = regionBase.clone();
+				tempLoc = tempLoc.add(4.00*(float)i,0.00,4.00*(float)j);
 				
-				regEffect.add(i*9+j, actor.getWorld().spawn(
-						regionBase.add(
-								4.0*i,
-								0.0,
-								4.0*j),
-						Snowball.class));
+				regEffect.add(i*9+j, actor.getWorld().spawn(tempLoc, Snowball.class));
+
+				//System.out.print("["+i+","+j+","+tempLoc.getX()+","+tempLoc.getZ()+"]");
+				//System.out.print("[base:"+regionBase.getX()+","+regionBase.getZ()+"]");
 				
 				regEffect.get(i*9+j).setVelocity(effVeloc);
 			}
@@ -196,8 +234,6 @@ public class mcRisk extends JavaPlugin {
 	}
 	
 	public void PlayerRegionConq(Player actor){
-		PlayerConqEffect(actor);
-		
 		//verify player isn't on cooldown
 		Date now = new Date();
 		if(!riskCooldown.containsKey(actor)){
@@ -206,7 +242,7 @@ public class mcRisk extends JavaPlugin {
 		Date riskReadyAt = riskCooldown.get(actor);
 		if(!now.after(riskReadyAt)){
 			//player needs to wait
-			Integer cdTime = (int)(riskReadyAt.getTime() - now.getTime())/1000;
+			Integer cdTime = 1 + (int)(riskReadyAt.getTime() - now.getTime())/1000;
 			actor.sendMessage("Please wait "+cdTime.toString()+" seconds before attempting another conquest.");
 			//System.out.println("Player "+actor.getName()+" must wait for risk cooldown.");
 			return;
@@ -223,7 +259,7 @@ public class mcRisk extends JavaPlugin {
 		
 		//players may not interact with public lands
 		if(regLevel < 0){
-			actor.sendMessage("Sorry, region "+region.toString()+" is public land.");
+			actor.sendMessage("Sorry, "+region.toString()+" is public land.");
 			return;
 		}
 		
@@ -231,39 +267,49 @@ public class mcRisk extends JavaPlugin {
 		if(regOwner == null || regLevel == 0){
 			regLevels.remove(region.toString());
 			regLevels.put(region.toString(), 1);
+			
 			regOwners.remove(region.toString());
 			regOwners.put(region.toString(), actor);
-			riskCooldown.put(actor, new Date(now.getTime() + ConqDelayTime));
-
-			actor.sendMessage("You now own region "+region.toString()+" (Level 1)!");
-			return;
 			
+			riskCooldown.put(actor, new Date(now.getTime() + ConqDelayTime));
+			
+			PlayerConqEffect(actor);
+			
+			actor.sendMessage("You now own "+region.toString()+"! (Level 1)!");
+			
+			return;
 		}else{
 			if(regOwner.equals(actor)){
 				regLevel += 1;
 				
 				regLevels.put(region.toString(), regLevel);
+				
 				riskCooldown.put(actor, new Date(now.getTime() + ConqDelayTime));
 				
-				actor.sendMessage("You have upgraded this region! It is now level "+regLevel+".");
+				PlayerConqEffect(actor);
 				
+				actor.sendMessage("You have upgraded "+region.toString()+"! (Level "+regLevel+")");
 			}else{
 				//System.out.println("Player "+actor.getName()+" has assaulted the region of "+reg+" owned by "+regOwner.getName()+".");
 				
 				regLevel -= 1;
 				
 				if(regLevel == 0){
+					PlayerConqEffect(actor);
+					
 					actor.sendMessage("You have assaulted "+region.toString()+"! It is now available for capture.");
-					regOwner.sendMessage("One of your regions has been lost! "+region.toString());
+					regOwner.sendMessage(region.toString()+" has been lost! ");
 					
 					regOwners.remove(region.toString());
 					riskCooldown.put(actor, new Date(now.getTime() + ConqDelayTime));
 					
 					return;
 				}else{
+					PlayerConqEffect(actor);
+					
 					//System.out.println("Region "+region.toString()+" has been downgraded to level "+regLevel+".");
-					actor.sendMessage("You have assaulted "+region.toString()+"! It is now level "+regLevel+".");
-					regOwner.sendMessage("One of your regions has been attacked! "+region.toString());
+					actor.sendMessage("You have assaulted "+region.toString()+"! (Now Level "+regLevel+")");
+					regOwner.sendMessage(region.toString()+" has been attacked! ");
 					
 					regLevels.put(region.toString(), regLevel);
 					riskCooldown.put(actor, new Date(now.getTime() + ConqDelayTime));
