@@ -1,0 +1,17 @@
+Fix player entity vs name use for reconnects
+
+Give loot for upgrade levels
+
+Fix territory protections
+	Enable OP override
+	
+Add commands for:
+	Territory aliasing
+	OP assignment of territory level, owner, and names
+	Allow collecting upgrades
+		distributing as mass upgrade or mass attack
+
+Add configuration for:
+	Loot table import
+	
+ 

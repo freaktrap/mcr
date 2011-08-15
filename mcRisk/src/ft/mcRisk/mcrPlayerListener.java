@@ -50,13 +50,13 @@ public class mcrPlayerListener extends PlayerListener {
             	return;
             }
             //shovels let players harvest from all owned regions
-            if((heldItem.getType() == Material.WOOD_PICKAXE) ||
-            		(heldItem.getType() == Material.STONE_PICKAXE)||
-            		(heldItem.getType() == Material.IRON_PICKAXE)||
-            		(heldItem.getType() == Material.GOLD_PICKAXE)||
-            		(heldItem.getType() == Material.DIAMOND_PICKAXE)){
+            if((heldItem.getType() == Material.WOOD_SPADE) ||
+            		(heldItem.getType() == Material.STONE_SPADE)||
+            		(heldItem.getType() == Material.IRON_SPADE)||
+            		(heldItem.getType() == Material.GOLD_SPADE)||
+            		(heldItem.getType() == Material.DIAMOND_SPADE)){
             	
-            	plugin.PlayerRegionInfo(event.getPlayer());
+            	plugin.PlayerLootTick(event.getPlayer());
             	return;
             }
             //axes let players ...
