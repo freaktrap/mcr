@@ -13,6 +13,7 @@ package ft.mcRisk;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import javax.management.timer.Timer;
 
@@ -28,7 +29,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 //import org.bukkit.entity.Fireball;
 import org.bukkit.util.Vector;
 import org.bukkit.inventory.ItemStack;
-import java.util.ArrayList;
+
+import org.bukkit.util.config.Configuration;
 
 /**
 * Conquest/Risk plugin for bukkit, allows players to make claims on regions of land
@@ -38,24 +40,54 @@ import java.util.ArrayList;
 public class mcRisk extends JavaPlugin {
 	private final mcrPlayerListener playerListener = new mcrPlayerListener(this);
 	private final mcrBlockListener blockListener = new mcrBlockListener(this);
+	
 	private final HashMap<Player, Boolean> debugees = new HashMap<Player, Boolean>();
+	
 	private final HashMap<Player, Date> riskCooldown = new HashMap<Player, Date>();
+	//private final HashMap<Player, Date> lootCooldown = new HashMap<Player, Date>();
+	//private final HashMap<Player, Date> conqCooldown = new HashMap<Player, Date>();
+	//private final HashMap<Player, Date> massCooldown = new HashMap<Player, Date>();
+	
 	private final HashMap<String, Player> regOwners = new HashMap<String, Player>();
+	private final HashMap<String, String> regOwnerz = new HashMap<String, String>();
 	private final HashMap<String, Integer> regLevels = new HashMap<String, Integer>();
+	private final HashMap<String, String> regAlias = new HashMap<String, String>();
 	
 	private final mcrLootTable lootTbl = new mcrLootTable();
+	
 	private long ConqDelayTime = 10*1000; //10 seconds
-
+	
+	public Configuration conf;
+	public double confConqCooldown;		//cooldown on conquests
+	public double confMassCooldown;		//cooldown on mass conquests
+	public double confLootCooldown;		//cooldown on looting
+	public int confLvlProt;				//minimum level for non-allied tool/build protections
+	public int confLvlRegen;			//minimum level to begin regenerating allied
+	public int confLvlDrown;			//minimum level to begin suffocating non-allied
+	
 	public void onDisable() {
 		// TODO: Place any custom disable code here
 		System.out.println("MCR Successfully Disabled");
 	}
 
     public void onEnable() {
-        //Register events
+    	//Import configuration
+    	conf = getConfiguration();
+    	confConqCooldown = 1000.0 * (double)conf.getInt("cooldown_conq", 5);
+    	confMassCooldown = 1000.0 * (double)conf.getInt("cooldown_mass", 5);
+    	confLootCooldown = 1000.0 * (double)conf.getInt("cooldown_loot", 5);
+
+    	confLvlProt = conf.getInt("regionlevel_prot", 3);
+    	confLvlRegen = conf.getInt("regionlevel_regen", 6);
+    	confLvlDrown = conf.getInt("regionlevel_drown", 9);
+    	conf.save();
     	
-		PluginManager pm = getServer().getPluginManager();
-		
+    	//Import save data
+    	
+    	
+    	PluginManager pm = getServer().getPluginManager();
+
+        //Register events
 		pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_INTERACT_ENTITY, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
@@ -67,6 +99,7 @@ public class mcRisk extends JavaPlugin {
 		//Register commands
 		//getCommand("pos").setExecutor(new SamplePosCommand(this));
 		//getCommand("debug").setExecutor(new SampleDebugCommand(this));
+		getCommand("conq").setExecutor(new ConqCommand(this));
 
 		// EXAMPLE: Custom code, here we just output some info so we can check all is well
 		PluginDescriptionFile pdfFile = this.getDescription();
@@ -80,6 +113,19 @@ public class mcRisk extends JavaPlugin {
 		lootTest = lootTbl.LootRoll();System.out.println("Test Roll: "+lootTest.name());
 		
 	}
+    
+    public void setRegionAlias(mcrRegion reg, String alias){
+    	regAlias.put(reg.toString(), alias);
+    }
+    
+    public void setRegionOwner(mcrRegion reg, String owner){
+    	regOwnerz.put(reg.toString(), owner);
+    }
+    
+    public boolean chkCanAlias(mcrRegion reg, String plrName){
+    	
+    	return false;
+    }
     
     public void PlayerLootTick(Player actor){
 		//verify player isn't on cooldown
@@ -150,7 +196,18 @@ public class mcRisk extends JavaPlugin {
     			actor.sendMessage("You have entered unclaimed territory.");
     		else
     			actor.sendMessage("You have entered the territory of "+regDesOwner+".");
+    	}else{
+    		//check for a different region alias
+    		String regSrcAlias = regAlias.get(regSrc.toString());
+    		String regDesAlias = regAlias.get(regSrc.toString());
     		
+    		if(regSrcAlias == null){
+    			if(regDesAlias != null){
+    				actor.sendMessage("You have entered "+regDesAlias+".");
+    			}
+    		}else if(!regSrcAlias.equalsIgnoreCase(regDesAlias)){
+				actor.sendMessage("You have entered "+regDesAlias+".");
+    		}
     	}
     }
 	

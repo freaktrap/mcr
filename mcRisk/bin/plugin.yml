@@ -3,9 +3,6 @@ main: ft.mcRisk.mcRisk
 version: 0.1
 
 commands:
-    pos:
-        description: Reveals player location or teleports to selected lcoation.
-        usage: /pos [x, y, z]
-    debug:
-        description: Not sure lol. 
-        usage: /debug
+    conq:
+        description: Interface for the mcRisk plugin, type /conq for details.
+        usage: /conq [sub-command] [parameters]
